@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SIG Castelldefels · Digital Twin</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div><div class="eyebrow">SIG CASTELLDEFELS · DIGITAL TWIN</div><h1>Territorio · Catastro · Planeamiento · 3D · IA</h1></div>
+  <div class="top-actions"><button class="btn" id="fitBtn">Ajustar</button><button class="btn" id="satBtn">Ortofoto</button><button class="btn" id="parcelBtn">Parcelario</button><button class="btn" id="planBtn">Planeamiento</button><button class="btn accent" id="reportBtn">Exportar</button></div>
+</header>
+<main class="layout">
+<aside class="sidebar">
+<section class="hero-card"><div class="badge">DIGITAL TWIN · DEMO MUNICIPAL</div><h2>De la parcela al escenario</h2><p>Lectura territorial, Catastro, planeamiento, actividades, viabilidad y 3D en un mismo entorno.</p></section>
+<section class="kpis"><div><span>Registros</span><strong id="kpiPoi">—</strong><small>visibles</small></div><div><span>Categorías</span><strong id="kpiCat">—</strong><small>normalizadas</small></div><div><span>Parkings</span><strong id="kpiParking">—</strong><small>OSM</small></div><div><span>Parcela</span><strong id="kpiParcel">—</strong><small>RC</small></div></section>
+<section class="panel">
+<div class="panel-title">Capas del gemelo</div>
+<label class="switch"><input type="checkbox" id="poiLayer" checked><span>Actividades y servicios</span></label>
+<label class="switch"><input type="checkbox" id="heatLayer"><span>Concentración territorial</span></label>
+<label class="switch"><input type="checkbox" id="buildingLayer"><span>Edificios 3D (zoom)</span></label>
+<label class="switch"><input type="checkbox" id="boundaryLayer" checked><span>Límite municipal</span></label>
+</section>
+<section class="panel">
+<div class="panel-title">1 · Parcela automática</div>
+<label>Referencia catastral<input id="rcInput" class="text-input" maxlength="20" placeholder="14 / 18 / 20 caracteres"></label>
+<div class="row"><button class="btn full" id="catastroBtn">Consultar Catastro</button><button class="btn" id="catastroOpenBtn">Visor ↗</button></div>
+<div class="mini-note" id="catastroMsg">Consulta pública. En GitHub Pages, si Catastro bloquea CORS, usá el visor oficial o ejecutá server.py localmente.</div>
+<div id="parcelCard" class="result-card hidden"></div>
+</section>
+<section class="panel">
+<div class="panel-title">2 · Planeamiento y normativa</div>
+<div class="row"><input id="zoneInput" class="text-input" placeholder="Clave urbanística, ej. 12a"><button class="btn" id="saveZoneBtn">Guardar</button></div>
+<div class="norm-grid">
+<label>Edific. m²/m²<input id="edif" type="number" step="0.01" placeholder="—"></label><label>Ocupación %<input id="occ" type="number" step="1" placeholder="—"></label><label>Plantas<input id="floors" type="number" step="1" placeholder="—"></label><label>Altura m<input id="height" type="number" step="0.01" placeholder="—"></label><label>Retranqueo m<input id="setback" type="number" step="0.1" placeholder="—"></label><label>m²/vivienda<input id="m2home" type="number" step="1" placeholder="—"></label>
+</div>
+<div class="source-badge" id="normSource">Fuente: no verificada</div>
+<div class="mini-note">Los parámetros normativos solo se muestran como oficiales cuando fueron verificados contra la fuente correspondiente.</div>
+</section>
+<section class="panel">
+<div class="panel-title">3 · Existente vs. permitido</div>
+<div class="compare-grid"><div><span>Solar</span><strong id="site">—</strong></div><div><span>Techo existente</span><strong id="existing">—</strong></div><div><span>Máximo teórico</span><strong id="maximum">—</strong></div><div><span>Potencial</span><strong id="potential">—</strong></div><div><span>Plantas</span><strong id="calcFloors">—</strong></div><div><span>Viv. teóricas</span><strong id="homes">—</strong></div></div>
+<div id="compliance" class="compliance neutral">Cargá una parcela y una regla normativa para analizar.</div><button class="btn full accent" id="scenarioBtn">Generar escenario 3D</button>
+</section>
+<section class="panel">
+<div class="panel-title">4 · Viabilidad preliminar</div>
+<div class="scenario-grid"><label>Precio €/m² útil<input id="price" value="4200" type="number"></label><label>Coste €/m² const.<input id="cost" value="1500" type="number"></label><label>Útil / construido %<input id="eff" value="80" type="number"></label><label>m²/vivienda<input id="homeM2" value="82" type="number"></label></div>
+<div class="compare-grid"><div><span>Útil</span><strong id="vUseful">—</strong></div><div><span>Ingresos</span><strong id="vRevenue">—</strong></div><div><span>Coste</span><strong id="vCost">—</strong></div><div><span>Margen bruto</span><strong id="vMargin">—</strong></div></div>
+</section>
+<section class="panel">
+<div class="panel-title">Actividades · taxonomía municipal</div><input id="search" class="search" placeholder="Buscar nombre, actividad o categoría…"><div id="categoryList" class="category-list"></div>
+</section>
+<section class="panel">
+<div class="panel-title">Agente geoespacial</div><div class="ask-input"><input id="ask" placeholder="¿Qué hay en esta parcela? ¿Qué permite?…"><button id="askBtn">Analizar</button></div><div id="answer" class="ask-answer">Motor determinista auditable.</div><div class="row"><button class="btn" id="ollamaBtn">IA local</button><span id="aiStatus" class="mini-note">Determinista</span></div>
+</section>
+<section class="panel">
+<div class="panel-title">Leyenda de categorías</div><div id="legendList" class="legend-list"></div>
+</section>
+<section class="panel">
+<div class="panel-title">Fuentes y trazabilidad</div><div class="source-list"><div><b>Catastro</b><span>Parcela / datos no protegidos</span><em>Oficial</em></div><div><b>Generalitat · MUC</b><span>Planeamiento SIG</span><em>Oficial</em></div><div><b>ICGC</b><span>Ortofoto / elevación</span><em>Oficial</em></div><div><b>OSM</b><span>Actividades / red urbana</span><em>Abierto</em></div><div><b>Overture</b><span>Edificios / lugares</span><em>Abierto</em></div></div></section>
+<footer>Demo no oficial · oficial ≠ abierto ≠ inferencia ≠ escenario.</footer>
+<div id="threeModal" class="three-modal hidden"><div class="three-box"><div class="three-head"><b>Volumen 3D · escenario</b><button id="close3d" class="btn">Cerrar</button></div><div id="threeScene"></div><div id="threeInfo" class="mini-note"></div></div></div>
+</aside>
+<section class="map-wrap"><div id="map"></div><div class="map-hud"><span class="status-dot"></span><span id="status">Inicializando…</span></div><div class="north">N</div></section>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body></html>
